@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using AutomatFinitLFC;
+using System.IO;
 using System.Text;
 
 
@@ -29,6 +30,8 @@ class Program
         switch (c)
         {
             case '*':
+                return 3;
+            case '+':
                 return 3;
             case '.':
                 return 2;
@@ -74,6 +77,40 @@ class Program
         return output.ToString();
     }
 
+    public static RegexNode BuildSyntaxTree(string postfix)
+    {
+        Stack<RegexNode> stack = new Stack<RegexNode>();
+        foreach (char c in postfix)
+        {
+            if (char.IsLetterOrDigit(c))
+            {
+                stack.Push(new RegexNode(c));
+            }
+            else if (c == '*' || c == '+')
+            {
+                RegexNode node = stack.Pop();
+                stack.Push(new RegexNode(c, node));
+            }
+            else if (c == '.' || c == '|')
+            {
+                RegexNode right = stack.Pop();
+                RegexNode left = stack.Pop();
+                stack.Push(new RegexNode(c, left, right));
+            }
+        }
+        return stack.Pop();
+    }
+
+    public static void PrintTree(RegexNode node, string indent = "", bool isLeft = true)
+    {
+        if (node == null) return;
+
+        Console.WriteLine(indent + (isLeft ? "├── " : "└── ") + node.Value);
+
+        PrintTree(node.Left, indent + (isLeft ? "│   " : "    "), true);
+        PrintTree(node.Right, indent + (isLeft ? "│   " : "    "), false);
+    }
+
     static void Main(string[] args)
     {
         FileMethods fileMethods = new FileMethods("..\\..\\..\\Read.txt");
@@ -97,7 +134,9 @@ class Program
                 Console.WriteLine("Forma poloneza postfixata: " + postfix);
                 break;
             case 2:
-                //afisarea arborelui sintactic
+                string postfixEx = formaPolonezaPostfixata(expresie);
+                RegexNode root = BuildSyntaxTree(postfixEx);
+                PrintTree(root);
                 break;
             case 3:
                 //afisarea automatului M
