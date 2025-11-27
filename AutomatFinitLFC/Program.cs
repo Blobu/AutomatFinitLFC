@@ -1,5 +1,6 @@
 ﻿using AutomatFinitLFC;
 using System.IO;
+using System.Linq.Expressions;
 using System.Text;
 
 
@@ -111,9 +112,11 @@ class Program
         PrintTree(node.Right, indent + (isLeft ? "│   " : "    "), false);
     }
 
+
     static void Main(string[] args)
     {
         FileMethods fileMethods = new FileMethods("..\\..\\..\\Read.txt");
+        DeterministicFiniteAutomaton dfa = new DeterministicFiniteAutomaton();
 
         string expresie = addPuncte(fileMethods.fileContent);
 
@@ -139,10 +142,27 @@ class Program
                 PrintTree(root);
                 break;
             case 3:
-                //afisarea automatului M
+                var writer = new StreamWriter("..\\..\\..\\output.txt",false);
+                try
+                {
+                    dfa.PrintAutomaton(writer);
+                    writer.Close();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Eroare la scrierea in fisier: " + ex.Message);
+                    throw;
+                }
+                dfa.PrintAutomaton();
                 break;
             case 4:
-                //verificarea unuia sau mai multor cuvinte ˆın automatul M
+                var words = new List<string> { "ab", "aabbc", "abc", "baba" }; //replace with reading from file or console
+                foreach (var word in words)
+                {
+                    Console.WriteLine($"Checking word: {word}");
+                    dfa.CheckWord(word);
+                    Console.WriteLine();
+                }
                 break;
             default:
                 Console.WriteLine("Optiune invalida");

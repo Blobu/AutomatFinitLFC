@@ -1,4 +1,9 @@
-﻿class DeterministicFiniteAutomaton
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
+class DeterministicFiniteAutomaton
 {
     private HashSet<string> states { get; set; }
     private HashSet<char> alphabet { get; set; }
@@ -18,7 +23,7 @@
         this.finalStates = finalStates;
     }
 
-    public bool VerifyAutomation()
+    public bool VerifyAutomaton()
     {
         if(!states.Contains(startState))
         {
@@ -45,27 +50,28 @@
         return true;
     }
 
-    public void PrintAutomation()
+    public void PrintAutomaton(TextWriter? writer = null)
     {
-        Console.WriteLine("States: " + string.Join(", ", states));
-        Console.WriteLine("Alphabet: " + string.Join(", ", alphabet));
-        Console.WriteLine("Start State: " + startState);
-        Console.WriteLine("Final States: " + string.Join(", ", finalStates));
-        Console.WriteLine("Transition Function:");
+        writer ??= Console.Out;
 
+        writer.WriteLine("States: " + string.Join(", ", states));
+        writer.WriteLine("Alphabet: " + string.Join(", ", alphabet));
+        writer.WriteLine("Start State: " + startState);
+        writer.WriteLine("Final States: " + string.Join(", ", finalStates));
+        writer.WriteLine("Transition Function:");
 
         foreach (var kvp in transitionFunction)
         {
-            Console.WriteLine($" Tr({kvp.Key.Item1}, {kvp.Key.Item2}) = {kvp.Value}");
-        }    
+            writer.WriteLine($" Tr({kvp.Key.Item1}, {kvp.Key.Item2}) = {kvp.Value}");
+        }
     }
 
-    public bool ChackWord(string word)
+    public bool CheckWord(string word)
     {
         string currentState = startState;
-        foreach(char symbol in word)
+        foreach (char symbol in word)
         {
-            if(!alphabet.Contains(symbol))
+            if (!alphabet.Contains(symbol))
             {
                 Console.WriteLine($"Symbol '{symbol}' not in alphabet.");
                 Console.WriteLine("Rejected.");
@@ -87,10 +93,11 @@
             Console.WriteLine("Accepted.");
             return true;
         }
-        else { 
+        else
+        {
             Console.WriteLine("Rejected.");
             return false;
         }
-    }
 
+    }
 }
