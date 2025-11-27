@@ -1,16 +1,17 @@
 ﻿using System.IO;
+using System.Text;
 
 
 
 class Program
 {
-
     static bool esteOperator(char c)
     {
         if (c == '(' || c == ')' || c == '.' || c == '*' || c == '|')
             return true;
         return false;
     }
+
     static string addPuncte(string expresie)
     {
         for(int i =0;i < expresie.Length-1 ; i++)
@@ -23,15 +24,59 @@ class Program
         return expresie;
     }
 
+    static int PrioritateOperator(char c)
+    {
+        switch (c)
+        {
+            case '*':
+                return 3;
+            case '.':
+                return 2;
+            case '|':
+                return 1;
+            default:
+                return 0;
+        }
+    }
+
     static string formaPolonezaPostfixata(string expresie)
     {
-        
-        return "";
+        var output = new StringBuilder();
+        var stack = new Stack<char>();
+
+        foreach (char c in expresie)
+        {
+            if (!esteOperator(c))
+            {
+                output.Append(c);
+            }
+            else if (c == '(')
+            {
+                stack.Push(c);
+            }
+            else if (c == ')')
+            {
+                while (stack.Count > 0 && stack.Peek() != '(')
+                {
+                    output.Append(stack.Pop());
+                }
+                stack.Pop();
+            }
+            else
+            {
+                while (stack.Count > 0 && PrioritateOperator(stack.Peek()) >= PrioritateOperator(c))
+                {
+                    output.Append(stack.Pop());
+                }
+                stack.Push(c);
+            }
+        }
+        return output.ToString();
     }
 
     static void Main(string[] args)
     {
-        FileMethods fileMethods = new FileMethods("D:\\Facultate\\AN_2SEM_1\\LFC\\AutomatFinitLFC\\AutomatFinitLFC\\Read.txt");
+        FileMethods fileMethods = new FileMethods("..\\..\\..\\Read.txt");
 
         string expresie = addPuncte(fileMethods.fileContent);
 
