@@ -3,104 +3,105 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-class DeterministicFiniteAutomaton
+namespace AutomatFinitLFC
 {
-    private HashSet<string> states { get; set; }
-    private HashSet<char> alphabet { get; set; }
-    private Dictionary<(string, char), string> transitionFunction { get; set; }
-    private string startState { get; set; }
-
-    private HashSet<string> finalStates { get; set; }
-
-    public DeterministicFiniteAutomaton(HashSet<string> states, HashSet<char> alphabet,
-        Dictionary<(string, char), string> transitionFunction, string startState,
-        HashSet<string> finalStates)
+    public class DeterministicFiniteAutomaton
     {
-        this.states = states;
-        this.alphabet = alphabet;
-        this.transitionFunction = transitionFunction;
-        this.startState = startState;
-        this.finalStates = finalStates;
-    }
+        private HashSet<string> States { get; set; }
+        private HashSet<char> Alphabet { get; set; }
+        private Dictionary<(string, char), string> TransitionFunction { get; set; }
+        private string StartState { get; set; }
 
-    public bool VerifyAutomaton()
-    {
-        if(!states.Contains(startState))
+        private HashSet<string> FinalStates { get; set; }
+
+        public DeterministicFiniteAutomaton(HashSet<string> states, HashSet<char> alphabet,
+            Dictionary<(string, char), string> transitionFunction, string startState,
+            HashSet<string> finalStates)
         {
-            return false;
+            this.States = states;
+            this.Alphabet = alphabet;
+            this.TransitionFunction = transitionFunction;
+            this.StartState = startState;
+            this.FinalStates = finalStates;
         }
 
-        if(!finalStates.All(state => states.Contains(state)))
+        public bool VerifyAutomaton()
         {
-            return false;
-        }
-
-        foreach (var kvp in transitionFunction) //kvp = KeyValuePointer
-        {
-            var (state, symbol) = kvp.Key;
-            var targetState = kvp.Value;
-
-            if (!states.Contains(state) || !states.Contains(targetState))
-                return false;
-
-            if (!alphabet.Contains(symbol))
-                return false;
-        }
-
-        return true;
-    }
-
-    public void PrintAutomaton(TextWriter? writer = null)
-    {
-        writer ??= Console.Out;
-
-        writer.WriteLine("States: " + string.Join(", ", states));
-        writer.WriteLine("Alphabet: " + string.Join(", ", alphabet));
-        writer.WriteLine("Start State: " + startState);
-        writer.WriteLine("Final States: " + string.Join(", ", finalStates));
-        writer.WriteLine("Transition Function:");
-
-        foreach (var kvp in transitionFunction)
-        {
-            writer.WriteLine($" Tr({kvp.Key.Item1}, {kvp.Key.Item2}) = {kvp.Value}");
-        }
-    }
-
-    public bool CheckWord(string word)
-    {
-        string currentState = startState;
-        foreach (char symbol in word)
-        {
-            if (!alphabet.Contains(symbol))
+            if (!States.Contains(StartState))
             {
-                Console.WriteLine($"Symbol '{symbol}' not in alphabet.");
-                Console.WriteLine("Rejected.");
                 return false;
             }
 
-            if (!transitionFunction.TryGetValue((currentState, symbol), out var nextState))
+            if (!FinalStates.All(state => States.Contains(state)))
             {
-                Console.WriteLine($"No transition from state '{currentState}' on symbol '{symbol}'.");
-                Console.WriteLine("Rejected.");
                 return false;
             }
 
-            currentState = nextState;
-        }
+            foreach (var kvp in TransitionFunction)
+            {
+                var (state, symbol) = kvp.Key;
+                var targetState = kvp.Value;
 
-        if (finalStates.Contains(currentState))
-        {
-            Console.WriteLine("Accepted.");
+                if (!States.Contains(state) || !States.Contains(targetState))
+                    return false;
+
+                if (!Alphabet.Contains(symbol))
+                    return false;
+            }
+
             return true;
         }
-        else
+
+        public void PrintAutomaton(TextWriter? writer = null)
         {
-            Console.WriteLine("Rejected.");
-            return false;
+            writer ??= Console.Out;
+
+            writer.WriteLine("States: " + string.Join(", ", States));
+            writer.WriteLine("Alphabet: " + string.Join(", ", Alphabet));
+            writer.WriteLine("Start State: " + StartState);
+            writer.WriteLine("Final States: " + string.Join(", ", FinalStates));
+            writer.WriteLine("Transition Function:");
+
+            foreach (var kvp in TransitionFunction)
+            {
+                writer.WriteLine($" Tr({kvp.Key.Item1}, {kvp.Key.Item2}) = {kvp.Value}");
+            }
+        }
+
+        public bool CheckWord(string word)
+        {
+            string currentState = StartState;
+            foreach (char symbol in word)
+            {
+                if (!Alphabet.Contains(symbol))
+                {
+                    Console.WriteLine($"Symbol '{symbol}' not in alphabet.");
+                    Console.WriteLine("Rejected.");
+                    return false;
+                }
+
+                if (!TransitionFunction.TryGetValue((currentState, symbol), out var nextState))
+                {
+                    Console.WriteLine($"No transition from state '{currentState}' on symbol '{symbol}'.");
+                    Console.WriteLine("Rejected.");
+                    return false;
+                }
+
+                currentState = nextState;
+            }
+
+            if (FinalStates.Contains(currentState))
+            {
+                Console.WriteLine("Accepted.");
+                return true;
+            }
+            else
+            {
+                Console.WriteLine("Rejected.");
+                return false;
+            }
+
         }
 
     }
-
-
-    
 }

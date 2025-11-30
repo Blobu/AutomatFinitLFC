@@ -1,13 +1,16 @@
 ﻿using System.IO;
 
-class FileMethods
+namespace AutomatFinitLFC
 {
-    public string filePath { get; set; }
-    public string fileContent {get;}
-
-    public FileMethods(string filePath)
+    public class FileMethods
     {
-        this.filePath = filePath;
-        this.fileContent = File.ReadAllText(filePath);
+        public string FilePath { get; set; }
+        public string FileContent { get; }
+
+        public FileMethods(string filePath)
+        {
+            this.FilePath = filePath;
+            this.FileContent = File.ReadAllText(filePath);
+        }
     }
 }

@@ -8,123 +8,119 @@ namespace AutomatFinitLFC
 {
     public class State
     {
-        public int name { get; }
-        public Dictionary<State, char> transitions { get; }
+        public int Name { get; }
+        public Dictionary<State, char> Transitions { get; }
 
         public State(int name)
         {
-            this.name = name;
-            transitions = new Dictionary<State, char>();
+            this.Name = name;
+            Transitions = new Dictionary<State, char>();
         }
 
-        public override string ToString() => "Q" + name;
+        public override string ToString() => "Q" + Name;
 
         public override bool Equals(object? obj) =>
-            obj is State s && s.name == this.name;
+            obj is State s && s.Name == this.Name;
 
-        public override int GetHashCode() => name.GetHashCode();
+        public override int GetHashCode() => Name.GetHashCode();
     }
     internal class Automat
     {
-        public HashSet<State> states { get; set; }
-        public State startState { get; set; }
-        public State finalState { get; set; }
+        public HashSet<State> States { get; set; }
+        public State StartState { get; set; }
+        public State FinalState { get; set; }
 
         public Automat(HashSet<State> states, State startState, State finalState)
         {
-            this.states = states;
-            this.startState = startState;
-            this.finalState = finalState;
+            this.States = states;
+            this.StartState = startState;
+            this.FinalState = finalState;
         }
 
-        public Automat(int startName,int finalName,char tranzitie)
+        public Automat(int startName, int finalName, char transition)
         {
             State start = new State(startName);
             State final = new State(finalName);
-            start.transitions[final] = tranzitie;
+            start.Transitions[final] = transition;
             HashSet<State> states = new HashSet<State> { start, final };
-            this.states = states;
-            this.startState = start;
-            this.finalState = final;
+            this.States = states;
+            this.StartState = start;
+            this.FinalState = final;
         }
 
         public Automat(Automat a)
         {
             var map = new Dictionary<int, State>();
-            foreach (var s in a.states)
+            foreach (var s in a.States)
             {
-                map[s.name] = new State(s.name);
+                map[s.Name] = new State(s.Name);
             }
 
-            foreach (var s in a.states)
+            foreach (var s in a.States)
             {
-                var newState = map[s.name];
-                foreach (var kv in s.transitions)
+                var newState = map[s.Name];
+                foreach (var kv in s.Transitions)
                 {
                     var oldTarget = kv.Key;
                     var symbol = kv.Value;
-                    newState.transitions[map[oldTarget.name]] = symbol;
+                    newState.Transitions[map[oldTarget.Name]] = symbol;
                 }
             }
 
-            this.states = new HashSet<State>(map.Values);
-            this.startState = map[a.startState.name];
-            this.finalState = map[a.finalState.name];
+            this.States = new HashSet<State>(map.Values);
+            this.StartState = map[a.StartState.Name];
+            this.FinalState = map[a.FinalState.Name];
         }
 
-        public void replaceState(State oldState, State newState)
+        public void ReplaceState(State oldState, State newState)
         {
-            foreach (var state in states)
+            foreach (var state in States)
             {
-                var keys = state.transitions.Keys.ToList();
+                var keys = state.Transitions.Keys.ToList();
                 foreach (var key in keys)
                 {
-                    if (key.name == oldState.name)
+                    if (key.Name == oldState.Name)
                     {
-                        var value = state.transitions[key];
-                        state.transitions.Remove(key);
-                        state.transitions[newState] = value;
+                        var value = state.Transitions[key];
+                        state.Transitions.Remove(key);
+                        state.Transitions[newState] = value;
                     }
                 }
             }
         }
 
-        
+
         public int findMaxStateName()
         {
             int max = -1;
-            foreach (var state in states)
+            foreach (var state in States)
             {
-                if (state.name > max)
+                if (state.Name > max)
                 {
-                    max = state.name;
+                    max = state.Name;
                 }
             }
             return max;
         }
 
-        //pentru operatorul .
-        public Automat concatenat_cu(Automat b)
+        public Automat ConcatenateWith(Automat b)
         {
-            
+
             Automat bCopy = new Automat(b);
 
-            // add epsilon from aCopy final to bCopy start
-            this.finalState.transitions[bCopy.startState] = '\0';
+            this.FinalState.Transitions[bCopy.StartState] = '\0';
 
-            // update final state to bCopy final and merge sets
-            var merged = new HashSet<State>(this.states);
-            merged.UnionWith(bCopy.states);
-            this.states = merged;
-            this.finalState = bCopy.finalState;
+            var merged = new HashSet<State>(this.States);
+            merged.UnionWith(bCopy.States);
+            this.States = merged;
+            this.FinalState = bCopy.FinalState;
 
             return this;
 
         }
 
 
-        //pentru operatorul |
-        public Automat alternat_cu(Automat b)
+        public Automat AlternateWith(Automat b)
         {
             Automat bCopy = new Automat(b);
             int index = Math.Max(this.findMaxStateName(), bCopy.findMaxStateName()) + 1;
@@ -132,53 +128,50 @@ namespace AutomatFinitLFC
             State newStart = new State(index);
             State newFinal = new State(index + 1);
 
-            newStart.transitions[this.startState] = '\0';
-            newStart.transitions[bCopy.startState] = '\0';
-            this.finalState.transitions[newFinal] = '\0';
-            bCopy.finalState.transitions[newFinal] = '\0';
+            newStart.Transitions[this.StartState] = '\0';
+            newStart.Transitions[bCopy.StartState] = '\0';
+            this.FinalState.Transitions[newFinal] = '\0';
+            bCopy.FinalState.Transitions[newFinal] = '\0';
 
-            HashSet<State> newStates = new HashSet<State>(this.states);
-            newStates.UnionWith(bCopy.states);
+            HashSet<State> newStates = new HashSet<State>(this.States);
+            newStates.UnionWith(bCopy.States);
             newStates.Add(newStart);
             newStates.Add(newFinal);
 
             return new Automat(newStates, newStart, newFinal);
         }
 
-        //pentru operatorul *
-        public Automat stelat()
+        public Automat Star()
         {
             Automat a = new Automat(this);
             int index = a.findMaxStateName() + 1;
             State newStart = new State(index);
             State newFinal = new State(index + 1);
-            newStart.transitions[a.startState] = '\0';
-            newStart.transitions[newFinal] = '\0';
-            a.finalState.transitions[a.startState] = '\0';
-            a.finalState.transitions[newFinal] = '\0';
-            HashSet<State> newStates = new HashSet<State>(a.states);
+            newStart.Transitions[a.StartState] = '\0';
+            newStart.Transitions[newFinal] = '\0';
+            a.FinalState.Transitions[a.StartState] = '\0';
+            a.FinalState.Transitions[newFinal] = '\0';
+            HashSet<State> newStates = new HashSet<State>(a.States);
             newStates.Add(newStart);
             newStates.Add(newFinal);
             return new Automat(newStates, newStart, newFinal);
         }
 
 
-        //pentru operatorul +
-        public Automat plus()
+        public Automat Plus()
         {
             Automat a = new Automat(this);
             int index = a.findMaxStateName() + 1;
             State newStart = new State(index);
             State newFinal = new State(index + 1);
-            newStart.transitions[a.startState] = '\0';
-            a.finalState.transitions[a.startState] = '\0';
-            a.finalState.transitions[newFinal] = '\0';
-            HashSet<State> newStates = new HashSet<State>(a.states);
+            newStart.Transitions[a.StartState] = '\0';
+            a.FinalState.Transitions[a.StartState] = '\0';
+            a.FinalState.Transitions[newFinal] = '\0';
+            HashSet<State> newStates = new HashSet<State>(a.States);
             newStates.Add(newStart);
             newStates.Add(newFinal);
             return new Automat(newStates, newStart, newFinal);
         }
-
 
     }
 }

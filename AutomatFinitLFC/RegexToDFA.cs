@@ -8,17 +8,16 @@ using System.Threading.Tasks;
 
 namespace AutomatFinitLFC
 {
-    
     internal class RegexToDFAClass
     {
         public RegexToDFAClass() { }
 
         public HashSet<char> DetermineAlphabet(string regex)
-            {
+        {
             HashSet<char> alphabet = new HashSet<char>();
             foreach (char c in regex)
             {
-                if (char.IsLetterOrDigit(c))
+                if (c >= 'a' && c <= 'z')
                 {
                     alphabet.Add(c);
                 }
@@ -28,94 +27,91 @@ namespace AutomatFinitLFC
 
 
 
-        public Automat AFN(string regex)
+        public Automat BuildNFA(string regex)
         {
             int index = 0;
             var stack = new Stack<Automat>();
 
             foreach (char c in regex)
             {
-                if (char.IsLetterOrDigit(c))
+                if (c >= 'a' && c <= 'z')
                 {
-                   stack.Push(new Automat(index, index + 1, c));
-                     index += 2;
+                    stack.Push(new Automat(index, index + 1, c));
+                    index += 2;
                 }
                 else if (c == '*' || c == '+')
                 {
-                    if (stack.Count < 1) throw new FormatException($"Este gresita forma postfixata. Nu pot sa am '{c}' fara sa am cel putin un element din alfabet inainte");
+                    if (stack.Count < 1) throw new FormatException($"Invalid postfix form: cannot have '{c}' without at least one alphabet element before it");
                     var node = stack.Pop();
                     if (c == '*')
-                        stack.Push(node.stelat());
+                        stack.Push(node.Star());
                     else
-                        stack.Push(node.plus());
+                        stack.Push(node.Plus());
 
                     index = Math.Max(index, stack.Peek().findMaxStateName() + 1);
                 }
                 else if (c == '.' || c == '|')
                 {
-                    if (stack.Count < 2) throw new FormatException($"Este gresita forma postfixata. Nu pot sa am '{c}' fara sa am cel putin 2 elemente din alfabet inainte");
+                    if (stack.Count < 2) throw new FormatException($"Invalid postfix form: cannot have '{c}' without at least 2 alphabet elements before it");
                     var right = stack.Pop();
                     var left = stack.Pop();
-                    if( c == '.')
-                        stack.Push(left.concatenat_cu(right));
+                    if (c == '.')
+                        stack.Push(left.ConcatenateWith(right));
                     else
-                        stack.Push(left.alternat_cu(right));
+                        stack.Push(left.AlternateWith(right));
 
                     index = Math.Max(index, stack.Peek().findMaxStateName() + 1);
                 }
                 else
                 {
-                    throw new FormatException($"Nu exista operatia '{c}'");
+                    throw new FormatException($"Unknown operation '{c}'");
                 }
             }
 
-            if (stack.Count != 1) throw new FormatException("Prea multe elemente din alfabet");
+            if (stack.Count != 1) throw new FormatException("Too many alphabet elements");
 
-            printAFN(stack.Peek());
+            PrintNFA(stack.Peek());
 
             return stack.Pop();
 
         }
 
 
-        public void printAFN(Automat afn)
+        public void PrintNFA(Automat nfa)
         {
-            if (afn == null)
+            if (nfa == null)
             {
-                Console.WriteLine("AFN is null");
+                Console.WriteLine("NFA is null");
                 return;
             }
 
-            Console.WriteLine("AFN description:");
+            Console.WriteLine("NFA description:");
             Console.WriteLine();
 
-            Console.WriteLine($"States ({afn.states.Count}):");
-            foreach (var state in afn.states.OrderBy(s => s.name))
+            Console.WriteLine($"States ({nfa.States.Count}):");
+            foreach (var state in nfa.States.OrderBy(s => s.Name))
             {
-                Console.WriteLine($"  {state}"); // State.ToString -> Q{n}
+                Console.WriteLine($"  {state}");
             }
 
             Console.WriteLine();
-            Console.WriteLine($"Start state: {afn.startState}");
-            Console.WriteLine($"Final state: {afn.finalState}");
+            Console.WriteLine($"Start state: {nfa.StartState}");
+            Console.WriteLine($"Final state: {nfa.FinalState}");
             Console.WriteLine();
 
             Console.WriteLine("Transitions:");
-            foreach (var state in afn.states.OrderBy(s => s.name))
+            foreach (var state in nfa.States.OrderBy(s => s.Name))
             {
-                foreach (var trans in state.transitions)
+                foreach (var trans in state.Transitions)
                 {
-                    var symbol = trans.Value == '\0' ? "ε" : trans.Value.ToString();
+                    var symbol = trans.Value == '\0' ? "e" : trans.Value.ToString();
                     Console.WriteLine($"  Tr({state}, {symbol}) -> {trans.Key}");
                 }
             }
             Console.WriteLine();
         }
 
-
-
-
-        public HashSet<State> LambdaExecution(HashSet<State> states)
+        public HashSet<State> LambdaClosure(HashSet<State> states)
         {
             var stack = new Stack<State>(states);
             var closure = new HashSet<State>(states);
@@ -123,7 +119,7 @@ namespace AutomatFinitLFC
             while (stack.Count > 0)
             {
                 var current = stack.Pop();
-                foreach (var trans in current.transitions)
+                foreach (var trans in current.Transitions)
                 {
                     if (trans.Value == '\0' && !closure.Contains(trans.Key))
                     {
@@ -135,13 +131,13 @@ namespace AutomatFinitLFC
             return closure;
         }
 
-        
-        public HashSet<State> getAllStates(HashSet<State> states, char c)
+
+        public HashSet<State> GetAllStatesForSymbol(HashSet<State> states, char c)
         {
             var result = new HashSet<State>();
             foreach (var state in states)
             {
-                foreach (var trans in state.transitions)
+                foreach (var trans in state.Transitions)
                 {
                     if (trans.Value == c)
                     {
@@ -152,101 +148,93 @@ namespace AutomatFinitLFC
             return result;
         }
 
-        public string CheckForSameStates(Dictionary<string, HashSet<State>> AllStates, HashSet<State> NewStateSet)
+        public string FindExistingStateName(Dictionary<string, HashSet<State>> allStates, HashSet<State> newStateSet)
         {
-            foreach (var existing in AllStates)
+            foreach (var existing in allStates)
             {
-                if (existing.Value.SetEquals(NewStateSet))
+                if (existing.Value.SetEquals(newStateSet))
                     return existing.Key;
             }
-            return "-1"; 
+            return "-1";
         }
 
         public DeterministicFiniteAutomaton RegexToDFA(string regex)
         {
-            Automat afn = AFN(regex);
+            Automat nfa = BuildNFA(regex);
             HashSet<char> alphabet = DetermineAlphabet(regex);
 
-            
-            Dictionary<string, HashSet<State>> DfaStateMapping = new Dictionary<string, HashSet<State>>();
-            var stack = new Stack<string>(); 
 
-            HashSet<string> DFA_states = new HashSet<string>();
-            Dictionary<(string, char), string> DFA_functions = new Dictionary<(string, char), string>();
-            HashSet<string> DFA_finalStates = new HashSet<string>();
+            Dictionary<string, HashSet<State>> dfaStateMapping = new Dictionary<string, HashSet<State>>();
+            var stack = new Stack<string>();
+
+            HashSet<string> dfaStates = new HashSet<string>();
+            Dictionary<(string, char), string> dfaFunctions = new Dictionary<(string, char), string>();
+            HashSet<string> dfaFinalStates = new HashSet<string>();
 
             int index = 0;
 
-            
-            var startSet = new HashSet<State> { afn.startState };
-            var startClosure = LambdaExecution(startSet);
+
+            var startSet = new HashSet<State> { nfa.StartState };
+            var startClosure = LambdaClosure(startSet);
 
             string startStateName = "Q" + index;
-            DfaStateMapping.Add(startStateName, startClosure);
+            dfaStateMapping.Add(startStateName, startClosure);
             stack.Push(startStateName);
-            DFA_states.Add(startStateName);
+            dfaStates.Add(startStateName);
 
-            
-            if (startClosure.Contains(afn.finalState))
-                DFA_finalStates.Add(startStateName);
 
-            
+            if (startClosure.Contains(nfa.FinalState))
+                dfaFinalStates.Add(startStateName);
+
+
             while (stack.Count > 0)
             {
                 string currentStateName = stack.Pop();
-                HashSet<State> currentNFAStates = DfaStateMapping[currentStateName];
+                HashSet<State> currentNFAStates = dfaStateMapping[currentStateName];
 
                 foreach (char c in alphabet)
                 {
-                    
-                    var moveResult = getAllStates(currentNFAStates, c);
 
-                    
+                    var moveResult = GetAllStatesForSymbol(currentNFAStates, c);
+
                     if (moveResult.Count == 0) continue;
 
-                    
-                    var nextStateSet = LambdaExecution(moveResult);
+                    var nextStateSet = LambdaClosure(moveResult);
 
-                    
-                    string existingName = CheckForSameStates(DfaStateMapping, nextStateSet);
+                    string existingName = FindExistingStateName(dfaStateMapping, nextStateSet);
 
                     if (existingName == "-1")
                     {
-                        
                         index++;
                         string newStateName = "Q" + index;
 
-                        DfaStateMapping.Add(newStateName, nextStateSet);
-                        stack.Push(newStateName); 
-                        DFA_states.Add(newStateName);
+                        dfaStateMapping.Add(newStateName, nextStateSet);
+                        stack.Push(newStateName);
+                        dfaStates.Add(newStateName);
 
-                        
-                        DFA_functions.Add((currentStateName, c), newStateName);
+                        dfaFunctions.Add((currentStateName, c), newStateName);
 
-                        
                         foreach (var s in nextStateSet)
                         {
-                            if (s.Equals(afn.finalState)) 
+                            if (s.Equals(nfa.FinalState))
                             {
-                                DFA_finalStates.Add(newStateName);
+                                dfaFinalStates.Add(newStateName);
                                 break;
                             }
                         }
                     }
                     else
                     {
-                        
-                        if (!DFA_functions.ContainsKey((currentStateName, c)))
+                        if (!dfaFunctions.ContainsKey((currentStateName, c)))
                         {
-                            DFA_functions.Add((currentStateName, c), existingName);
+                            dfaFunctions.Add((currentStateName, c), existingName);
                         }
                     }
                 }
             }
 
-            return new DeterministicFiniteAutomaton(DFA_states, alphabet, DFA_functions, startStateName, DFA_finalStates);
+            return new DeterministicFiniteAutomaton(dfaStates, alphabet, dfaFunctions, startStateName, dfaFinalStates);
         }
     }
 }
-    
 

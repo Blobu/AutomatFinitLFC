@@ -9,10 +9,10 @@ namespace AutomatFinitLFC
     public class RegexNode
     {
         public char Value { get; set; }
-        public RegexNode Left { get; set; }
-        public RegexNode Right { get; set; }
+        public RegexNode? Left { get; set; }
+        public RegexNode? Right { get; set; }
 
-        public RegexNode(char value, RegexNode left = null, RegexNode right = null)
+        public RegexNode(char value, RegexNode? left = null, RegexNode? right = null)
         {
             Value = value;
             Left = left;

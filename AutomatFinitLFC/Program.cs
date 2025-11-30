@@ -1,70 +1,81 @@
-﻿using AutomatFinitLFC;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq.Expressions;
 using System.Text;
-
-
+using System.Linq;
+using AutomatFinitLFC;
 
 class Program
 {
-    static bool esteOperator(char c)
+    static bool IsOperator(char c)
     {
-        if (c == '(' || c == ')' || c == '.' || c == '*' || c == '|'||c=='+')
-            return true;
-        return false;
+        return c == '(' || c == ')' || c == '.' || c == '*' || c == '|' || c == '+';
     }
 
-    static string addPuncte(string expresie)
+    static bool IsOperand(char c)
     {
-        for(int i =0;i < expresie.Length-1 ; i++)
+        return c >= 'a' && c <= 'z';
+    }
+
+    static bool ValidateExpression(string expression)
+    {
+        foreach (char c in expression)
         {
-            if (!esteOperator(expresie[i])&&(!esteOperator(expresie[i+1])||expresie[i+1]=='('))
+            if (IsOperator(c) || IsOperand(c))
+                continue;
+            Console.WriteLine($"Invalid character in expression: '{c}'. Only lowercase letters a-z and operators () . * + | are allowed.");
+            return false;
+        }
+        return true;
+    }
+
+    static string AddDots(string expression)
+    {
+        for (int i = 0; i < expression.Length - 1; i++)
+        {
+            if (!IsOperator(expression[i]) && (!IsOperator(expression[i + 1]) || expression[i + 1] == '('))
             {
-                expresie = expresie.Insert(i+1, ".");
+                expression = expression.Insert(i + 1, ".");
             }
-            else if (expresie[i]=='*' || expresie[i]=='+')
+            else if (expression[i] == '*' || expression[i] == '+')
             {
-                if(!esteOperator(expresie[i+1])||expresie[i+1]=='(')
+                if (!IsOperator(expression[i + 1]) || expression[i + 1] == '(')
                 {
-                    expresie = expresie.Insert(i + 1, ".");
+                    expression = expression.Insert(i + 1, ".");
                 }
             }
-            else if(expresie[i]==')')
+            else if (expression[i] == ')')
             {
-                if(!esteOperator(expresie[i+1])||expresie[i+1]=='(')
+                if (!IsOperator(expression[i + 1]) || expression[i + 1] == '(')
                 {
-                    expresie = expresie.Insert(i + 1, ".");
+                    expression = expression.Insert(i + 1, ".");
                 }
             }
         }
-        return expresie;
+        return expression;
     }
 
-    static int PrioritateOperator(char c)
+    static int OperatorPrecedence(char c)
     {
-        switch (c)
+        return c switch
         {
-            case '*':
-                return 3;
-            case '+':
-                return 3;
-            case '.':
-                return 2;
-            case '|':
-                return 1;
-            default:
-                return 0;
-        }
+            '*' => 3,
+            '+' => 3,
+            '.' => 2,
+            '|' => 1,
+            _ => 0,
+        };
     }
 
-    static string formaPolonezaPostfixata(string expresie)
+    static string ToPostfix(string expression)
     {
         var output = new StringBuilder();
         var stack = new Stack<char>();
 
-        foreach (char c in expresie)
+        foreach (char c in expression)
         {
-            if (!esteOperator(c))
+            if (!IsOperator(c))
             {
                 output.Append(c);
             }
@@ -82,7 +93,7 @@ class Program
             }
             else
             {
-                while (stack.Count > 0 && PrioritateOperator(stack.Peek()) >= PrioritateOperator(c))
+                while (stack.Count > 0 && OperatorPrecedence(stack.Peek()) >= OperatorPrecedence(c))
                 {
                     output.Append(stack.Pop());
                 }
@@ -101,7 +112,7 @@ class Program
         Stack<RegexNode> stack = new Stack<RegexNode>();
         foreach (char c in postfix)
         {
-            if (char.IsLetterOrDigit(c))
+            if (IsOperand(c))
             {
                 stack.Push(new RegexNode(c));
             }
@@ -134,35 +145,42 @@ class Program
     static void Main(string[] args)
     {
         FileMethods fileMethods = new FileMethods("..\\..\\..\\Read.txt");
-       
 
-        string expresie = addPuncte(fileMethods.fileContent);
-        string postfix = formaPolonezaPostfixata(expresie);
+        string raw = fileMethods.FileContent ?? string.Empty;
+        string normalized = new string(raw.Where(c => !char.IsWhiteSpace(c)).ToArray()).ToLowerInvariant();
+
+        if (!ValidateExpression(normalized))
+        {
+            Console.WriteLine("Expression validation failed. Exiting.");
+            return;
+        }
+
+        string expression = AddDots(normalized);
+        string postfix = ToPostfix(expression);
         RegexToDFAClass regexToDFA = new RegexToDFAClass();
         DeterministicFiniteAutomaton dfa = regexToDFA.RegexToDFA(postfix);
-        Console.WriteLine(expresie+"\n");
+        Console.WriteLine(expression + "\n");
         int input;
 
-        //read from console
-        Console.WriteLine("Alege o obtiune:\n" +
-            "1 - afisarea formei poloneze postfixate a expresiei regulate r\n" +
-            "2 - afisarea arborelui sintactic corespunzator expresiei regulate r\n" +
-            "3 - afisarea automatului M \n" +
-            "4 - verificarea unuia sau mai multor cuvinte in automatul M\n");
+        Console.WriteLine("Choose an option:\n" +
+            "1 - Show postfix form of the regular expression\n" +
+            "2 - Print the syntax tree of the regular expression\n" +
+            "3 - Print the automaton M\n" +
+            "4 - Check one or more words in automaton M\n");
         input = Convert.ToInt32(Console.ReadLine());
 
         switch (input)
         {
             case 1:
-                
-                Console.WriteLine("Forma poloneza postfixata: " + postfix);
+                Console.WriteLine("Expression with dots: " + expression);
+                Console.WriteLine("Postfix form: " + postfix);
                 break;
             case 2:
                 RegexNode root = BuildSyntaxTree(postfix);
                 PrintTree(root);
                 break;
             case 3:
-                var writer = new StreamWriter("..\\..\\..\\output.txt",false);
+                var writer = new StreamWriter("..\\..\\..\\output.txt", false);
                 try
                 {
                     dfa.PrintAutomaton(writer);
@@ -170,22 +188,37 @@ class Program
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Eroare la scrierea in fisier: " + ex.Message);
+                    Console.WriteLine("Error writing to file: " + ex.Message);
                     throw;
                 }
                 dfa.PrintAutomaton();
                 break;
             case 4:
-                var words = new List<string> { "ab", "aabbc", "abc", "baba" }; //replace with reading from file or console
-                foreach (var word in words)
+                var words = new List<string>();
+                Console.WriteLine("Enter words, one per line. Leave an empty line to finish:");
+                while (true)
                 {
-                    Console.WriteLine($"Checking word: {word}");
-                    dfa.CheckWord(word);
-                    Console.WriteLine();
+                    string? line = Console.ReadLine();
+                    if (string.IsNullOrWhiteSpace(line))
+                        break;
+                    words.Add(line.Trim());
+                }
+                if (words.Count == 0)
+                {
+                    Console.WriteLine("No words to check.");
+                }
+                else
+                {
+                    foreach (var word in words)
+                    {
+                        Console.WriteLine($"Checking word: {word}");
+                        dfa.CheckWord(word);
+                        Console.WriteLine();
+                    }
                 }
                 break;
             default:
-                Console.WriteLine("Optiune invalida");
+                Console.WriteLine("Invalid option");
                 break;
         }
 
