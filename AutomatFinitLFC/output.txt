@@ -1,0 +1,14 @@
+States: Q0, Q1, Q2, Q3, Q4
+Alphabet: a, b
+Start State: Q0
+Final States: Q3
+Transition Function:
+ Tr(Q0, a) = Q1
+ Tr(Q0, b) = Q2
+ Tr(Q2, a) = Q1
+ Tr(Q2, b) = Q3
+ Tr(Q3, a) = Q1
+ Tr(Q3, b) = Q3
+ Tr(Q1, a) = Q4
+ Tr(Q4, a) = Q1
+ Tr(Q4, b) = Q2

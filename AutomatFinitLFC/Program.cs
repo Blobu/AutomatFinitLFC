@@ -9,7 +9,7 @@ class Program
 {
     static bool esteOperator(char c)
     {
-        if (c == '(' || c == ')' || c == '.' || c == '*' || c == '|')
+        if (c == '(' || c == ')' || c == '.' || c == '*' || c == '|'||c=='+')
             return true;
         return false;
     }
@@ -21,6 +21,20 @@ class Program
             if (!esteOperator(expresie[i])&&(!esteOperator(expresie[i+1])||expresie[i+1]=='('))
             {
                 expresie = expresie.Insert(i+1, ".");
+            }
+            else if (expresie[i]=='*' || expresie[i]=='+')
+            {
+                if(!esteOperator(expresie[i+1])||expresie[i+1]=='(')
+                {
+                    expresie = expresie.Insert(i + 1, ".");
+                }
+            }
+            else if(expresie[i]==')')
+            {
+                if(!esteOperator(expresie[i+1])||expresie[i+1]=='(')
+                {
+                    expresie = expresie.Insert(i + 1, ".");
+                }
             }
         }
         return expresie;
@@ -75,6 +89,10 @@ class Program
                 stack.Push(c);
             }
         }
+        while (stack.Count > 0)
+        {
+            output.Append(stack.Pop());
+        }
         return output.ToString();
     }
 
@@ -116,10 +134,13 @@ class Program
     static void Main(string[] args)
     {
         FileMethods fileMethods = new FileMethods("..\\..\\..\\Read.txt");
-        DeterministicFiniteAutomaton dfa = new DeterministicFiniteAutomaton();
+       
 
         string expresie = addPuncte(fileMethods.fileContent);
-
+        string postfix = formaPolonezaPostfixata(expresie);
+        RegexToDFAClass regexToDFA = new RegexToDFAClass();
+        DeterministicFiniteAutomaton dfa = regexToDFA.RegexToDFA(postfix);
+        Console.WriteLine(expresie+"\n");
         int input;
 
         //read from console
@@ -127,18 +148,17 @@ class Program
             "1 - afisarea formei poloneze postfixate a expresiei regulate r\n" +
             "2 - afisarea arborelui sintactic corespunzator expresiei regulate r\n" +
             "3 - afisarea automatului M \n" +
-            "4 - verificarea unuia sau mai multor cuvinte ˆın automatul M\n");
+            "4 - verificarea unuia sau mai multor cuvinte in automatul M\n");
         input = Convert.ToInt32(Console.ReadLine());
 
         switch (input)
         {
             case 1:
-                string postfix = formaPolonezaPostfixata(expresie);
+                
                 Console.WriteLine("Forma poloneza postfixata: " + postfix);
                 break;
             case 2:
-                string postfixEx = formaPolonezaPostfixata(expresie);
-                RegexNode root = BuildSyntaxTree(postfixEx);
+                RegexNode root = BuildSyntaxTree(postfix);
                 PrintTree(root);
                 break;
             case 3:
