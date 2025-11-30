@@ -70,46 +70,12 @@ namespace AutomatFinitLFC
 
             if (stack.Count != 1) throw new FormatException("Too many alphabet elements");
 
-            PrintNFA(stack.Peek());
-
             return stack.Pop();
 
         }
 
 
-        public void PrintNFA(Automat nfa)
-        {
-            if (nfa == null)
-            {
-                Console.WriteLine("NFA is null");
-                return;
-            }
-
-            Console.WriteLine("NFA description:");
-            Console.WriteLine();
-
-            Console.WriteLine($"States ({nfa.States.Count}):");
-            foreach (var state in nfa.States.OrderBy(s => s.Name))
-            {
-                Console.WriteLine($"  {state}");
-            }
-
-            Console.WriteLine();
-            Console.WriteLine($"Start state: {nfa.StartState}");
-            Console.WriteLine($"Final state: {nfa.FinalState}");
-            Console.WriteLine();
-
-            Console.WriteLine("Transitions:");
-            foreach (var state in nfa.States.OrderBy(s => s.Name))
-            {
-                foreach (var trans in state.Transitions)
-                {
-                    var symbol = trans.Value == '\0' ? "e" : trans.Value.ToString();
-                    Console.WriteLine($"  Tr({state}, {symbol}) -> {trans.Key}");
-                }
-            }
-            Console.WriteLine();
-        }
+       
 
         public HashSet<State> LambdaClosure(HashSet<State> states)
         {

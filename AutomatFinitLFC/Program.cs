@@ -159,7 +159,6 @@ class Program
         string postfix = ToPostfix(expression);
         RegexToDFAClass regexToDFA = new RegexToDFAClass();
         DeterministicFiniteAutomaton dfa = regexToDFA.RegexToDFA(postfix);
-        Console.WriteLine(expression + "\n");
         int input;
 
         Console.WriteLine("Choose an option:\n" +
